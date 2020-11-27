@@ -12,10 +12,10 @@ pub fn main() -> Result<()> {
     let mut buffer = reader.fill_buf()?;
 
     while !buffer.is_empty() {
-        for ch in buffer.iter() {
+        for ch in buffer {
             result += match *ch {
-                0x28 => 1,
-                0x29 => -1,
+                0x28 => 1,  // The ASCII hexcode for '('.
+                0x29 => -1, // The ASCII hexcode for ')'.
                 _ => 0,
             };
 
