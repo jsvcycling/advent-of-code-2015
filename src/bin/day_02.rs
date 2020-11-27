@@ -18,7 +18,7 @@ pub fn main() -> Result<()> {
 
         // Parse the line into a vector of u32's.
         let vals: Vec<u32> = buffer
-            .split("x")
+            .split('x')
             .map(|v| v.trim().parse::<u32>().unwrap())
             .collect();
 
@@ -40,7 +40,7 @@ pub fn main() -> Result<()> {
             // ribbon needed for the now.
             let longest_side = vals.iter().max().unwrap();
             let sides: u32 = vals.iter().sum();
-            let bow = vals.iter().fold(1, |acc, v| acc * v);
+            let bow: u32 = vals.iter().product();
 
             total_ribbon += (sides - longest_side) * 2 + bow;
         }
