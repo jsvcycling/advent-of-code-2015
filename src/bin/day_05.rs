@@ -34,6 +34,7 @@ fn part1(reader: &mut BufReader<File>) -> Result<usize> {
         buffer = buffer.trim().to_string();
         let mut chars = buffer.chars();
 
+        // We need to remember the previous character.
         let mut prev_char = chars.next().unwrap();
 
         if check_vowel(&prev_char) {
@@ -80,73 +81,61 @@ fn part2(reader: &mut BufReader<File>) -> Result<usize> {
 
         buffer = buffer.trim().to_string();
 
-        // Rule 1
-        {
-            let mut pairs = HashMap::new();
+        // We need to remember the two previous characters.
+        let mut chars = buffer.chars();
+        let mut prev_char1 = chars.next().unwrap();
+        let mut prev_char2 = chars.next().unwrap();
 
-            let mut chars = buffer.chars();
-            let mut prev_char = chars.next().unwrap();
+        let mut pairs = HashMap::new();
+        pairs.insert(format!("{}{}", prev_char1, prev_char2), 1);
 
-            for c in chars {
-                let pair = format!("{}{}", prev_char, c);
+        let mut passed1 = false;
+        let mut passed2 = false;
 
-                if let Some(v) = pairs.get_mut(&pair) {
-                    *v += 1;
-                } else {
-                    pairs.insert(pair, 1);
-                }
-
-                prev_char = c;
+        // Iterate over every character in the string and test Criteria 2 as
+        // well as build a hashmap of pairs. The number of times a pair
+        // appears in the string is recorded in the hashmap value.
+        for c in chars {
+            if prev_char1 == c {
+                passed2 = true;
             }
 
-            let pairs: HashMap<&String, &usize> = pairs.iter().filter(|(_, v)| *v >= &2).collect();
+            let pair = format!("{}{}", prev_char2, c);
 
-            if pairs.is_empty() {
-                continue;
+            if let Some(v) = pairs.get_mut(&pair) {
+                *v += 1;
+            } else {
+                pairs.insert(pair, 1);
             }
 
-            let mut rule1_passed = false;
-
-            for (k, _) in pairs.iter() {
-                let find_idx = buffer.find(k.as_str()).unwrap();
-                let rfind_idx = buffer.rfind(k.as_str()).unwrap();
-
-                if rfind_idx != find_idx + 1 {
-                    rule1_passed = true;
-                }
-            }
-
-            if !rule1_passed {
-                continue;
-            }
-
-            println!("{:?}", pairs);
+            // Prepare to shift over 1 character.
+            prev_char1 = prev_char2;
+            prev_char2 = c;
         }
 
-        // Rule 2
-        {
-            let mut chars = buffer.chars();
-            let mut prev_char1 = chars.next().unwrap();
-            let mut prev_char2 = chars.next().unwrap();
+        let pairs: HashMap<&String, &usize> = pairs.iter().filter(|(_, v)| *v >= &2).collect();
 
-            let mut rule2_passed = false;
+        if pairs.is_empty() {
+            continue;
+        }
 
-            for c in chars {
-                if prev_char1 == c {
-                    rule2_passed = true;
-                    break;
-                }
+        // For each pair with 2 or more occurrences, make sure that the first &
+        // last occurrance do not overlap (if there are 3 occurrences it's okay
+        // if the "middle" occurrence overlaps with one of the outer ones; we
+        // only need 2 ocurrences).
+        for (k, _) in pairs.iter() {
+            let find_idx = buffer.find(k.as_str()).unwrap();
+            let rfind_idx = buffer.rfind(k.as_str()).unwrap();
 
-                prev_char1 = prev_char2;
-                prev_char2 = c;
-            }
-
-            if !rule2_passed {
-                continue;
+            if rfind_idx != find_idx + 1 {
+                passed1 = true;
+                break;
             }
         }
 
-        nice_count += 1;
+        if passed1 && passed2 {
+            nice_count += 1;
+        }
     }
 
     Ok(nice_count)
