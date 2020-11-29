@@ -97,7 +97,7 @@ pub fn part1(reader: &mut BufReader<File>) -> Result<usize> {
         }
     }
 
-    let turned_on = lights.iter().filter(|(_, v)| **v == true).count();
+    let turned_on = lights.values().filter(|v| **v == true).count();
 
     Ok(turned_on)
 }
