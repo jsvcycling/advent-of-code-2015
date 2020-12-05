@@ -171,7 +171,6 @@ fn execute(cache: &mut HashMap<String, u16>, graph: &HashMap<String, Operation>,
             cache.insert(target.clone(), !out);
             !out
         },
-        _ => panic!(),
     }
 }
 
