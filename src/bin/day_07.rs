@@ -11,10 +11,14 @@ enum Operation {
     Or(String, String),
     LShift(String, String),
     RShift(String, String),
-    Not(String)
+    Not(String),
 }
 
-fn execute(cache: &mut HashMap<String, u16>, graph: &HashMap<String, Operation>, target: &String) -> u16 {
+fn execute(
+    cache: &mut HashMap<String, u16>,
+    graph: &HashMap<String, Operation>,
+    target: &String,
+) -> u16 {
     let op = graph.get(target).unwrap();
 
     match op {
@@ -27,7 +31,7 @@ fn execute(cache: &mut HashMap<String, u16>, graph: &HashMap<String, Operation>,
             let out = execute(cache, graph, value);
             cache.insert(target.clone(), out);
             out
-        },
+        }
         Operation::And(left, right) => {
             let l = {
                 if cache.contains_key(left) {
@@ -60,7 +64,7 @@ fn execute(cache: &mut HashMap<String, u16>, graph: &HashMap<String, Operation>,
             };
 
             l & r
-        },
+        }
         Operation::Or(left, right) => {
             let l = {
                 if cache.contains_key(left) {
@@ -93,7 +97,7 @@ fn execute(cache: &mut HashMap<String, u16>, graph: &HashMap<String, Operation>,
             };
 
             l | r
-        },
+        }
         Operation::LShift(left, right) => {
             let l = {
                 if cache.contains_key(left) {
@@ -126,7 +130,7 @@ fn execute(cache: &mut HashMap<String, u16>, graph: &HashMap<String, Operation>,
             };
 
             l << r
-        },
+        }
         Operation::RShift(left, right) => {
             let l = {
                 if cache.contains_key(left) {
@@ -159,9 +163,8 @@ fn execute(cache: &mut HashMap<String, u16>, graph: &HashMap<String, Operation>,
             };
 
             l >> r
-        },
+        }
         Operation::Not(value) => {
-
             if let Ok(v) = value.parse::<u16>() {
                 cache.insert(target.clone(), v);
                 return v;
@@ -170,7 +173,7 @@ fn execute(cache: &mut HashMap<String, u16>, graph: &HashMap<String, Operation>,
             let out = execute(cache, graph, value);
             cache.insert(target.clone(), !out);
             !out
-        },
+        }
     }
 }
 
@@ -231,7 +234,8 @@ pub fn main() -> Result<()> {
     // Start the recursion!
     let part1 = execute(&mut cache, &ops, &String::from("a"));
 
-    ops.entry(String::from("b")).and_modify(|v| *v = Operation::Set(format!("{}", part1)));
+    ops.entry(String::from("b"))
+        .and_modify(|v| *v = Operation::Set(format!("{}", part1)));
     cache.clear();
 
     let part2 = execute(&mut cache, &ops, &String::from("a"));
