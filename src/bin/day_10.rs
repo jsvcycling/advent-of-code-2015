@@ -1,39 +1,30 @@
-fn compute(initial_input: &str, rounds: usize) -> usize {
-    let mut input = String::from(initial_input);
-
-    for _ in 0..rounds {
+fn compute(initial_input: &str, rounds: usize) -> String {
+    (0..rounds).fold(initial_input.to_string(), |input, _| {
         let mut result = String::new();
-        let mut iter = input.chars();
-
-        let mut ch = iter.next().unwrap();
+        let chars: Vec<char> = input.chars().collect();
         let mut count = 1;
 
-        loop {
-            if let Some(c) = iter.next() {
-                if c == ch {
-                    count += 1;
-                    continue;
-                }
-
-                result.push_str(format!("{}{}", count, ch).as_str());
-                ch = c;
-                count = 1;
-                continue;
+        for idx in 0..chars.len() {
+            if idx + 1 >= chars.len() {
+                result.push_str(format!("{}{}", count, chars[idx]).as_str());
+                break;
             }
 
-            result.push_str(format!("{}{}", count, ch).as_str());
-            break;
+            if chars[idx] == chars[idx + 1] {
+                count += 1;
+            } else {
+                result.push_str(format!("{}{}", count, chars[idx]).as_str());
+                count = 1;
+            }
         }
 
-        input = result;
-    }
-
-    input.len()
+        result
+    })
 }
 
 pub fn main() {
     let input = "1113222113";
 
-    println!("Part 1: {}", compute(&input, 40));
-    println!("Part 2: {}", compute(&input, 50));
+    println!("Part 1: {}", compute(&input, 40).len());
+    println!("Part 2: {}", compute(&input, 50).len());
 }
