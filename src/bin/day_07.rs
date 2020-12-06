@@ -91,6 +91,6 @@ pub fn main() {
 
     let part2 = execute(&mut cache, &ops, &"a".to_string());
 
-    println!("Part 1: {:?}", part1);
-    println!("Part 2: {:?}", part2);
+    println!("Part 1: {}", part1);
+    println!("Part 2: {}", part2);
 }
