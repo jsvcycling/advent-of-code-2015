@@ -1,12 +1,8 @@
-use std::io::prelude::*;
-
 use std::collections::HashMap;
-use std::fs::File;
-use std::io::{BufReader, Result, SeekFrom};
+use std::fs::read_to_string;
 
 type Coord = (i32, i32);
 
-#[derive(Debug)]
 enum Action {
     TurnOn { start: Coord, end: Coord },
     TurnOff { start: Coord, end: Coord },
@@ -23,8 +19,8 @@ fn parse_coord(coord: &str) -> Coord {
     (vals[0], vals[1])
 }
 
-fn parse_action(input: String) -> Action {
-    let parts: Vec<&str> = input.split(' ').collect();
+fn parse_action(input: &str) -> Action {
+    let parts: Vec<&str> = input.split_whitespace().collect();
 
     if parts[1] == "on" {
         return Action::TurnOn {
@@ -46,21 +42,14 @@ fn parse_action(input: String) -> Action {
     Action::None
 }
 
-pub fn part1(reader: &mut BufReader<File>) -> Result<usize> {
+pub fn part1(buf: &String) -> usize {
     // Although we're working on a "grid", store the light states in a HashMap
     // so that they can be handled sparsely (i.e. we don't care about lights
     // that we never interact with).
     let mut lights = HashMap::new();
 
-    loop {
-        let mut buffer = String::new();
-        let result = reader.read_line(&mut buffer);
-
-        if result.is_err() || result.unwrap() == 0 {
-            break;
-        }
-
-        let action = parse_action(buffer);
+    buf.lines().for_each(|line| {
+        let action = parse_action(line);
 
         match action {
             Action::TurnOn { start, end } => {
@@ -94,29 +83,20 @@ pub fn part1(reader: &mut BufReader<File>) -> Result<usize> {
                 }
             }
             _ => (),
-        }
-    }
+        };
+    });
 
-    let turned_on = lights.values().filter(|v| **v == true).count();
-
-    Ok(turned_on)
+    lights.values().filter(|v| **v == true).count()
 }
 
-pub fn part2(reader: &mut BufReader<File>) -> Result<i32> {
+pub fn part2(buf: &String) -> i32 {
     // Although we're working on a "grid", store the light states in a HashMap
     // so that they can be handled sparsely (i.e. we don't care about lights
     // that we never interact with).
     let mut lights = HashMap::new();
 
-    loop {
-        let mut buffer = String::new();
-        let result = reader.read_line(&mut buffer);
-
-        if result.is_err() || result.unwrap() == 0 {
-            break;
-        }
-
-        let action = parse_action(buffer);
+    buf.lines().for_each(|line| {
+        let action = parse_action(line);
 
         match action {
             Action::TurnOn { start, end } => {
@@ -143,23 +123,15 @@ pub fn part2(reader: &mut BufReader<File>) -> Result<i32> {
                 }
             }
             _ => (),
-        }
-    }
+        };
+    });
 
-    let total_brightness = lights.values().sum();
-
-    Ok(total_brightness)
+    lights.values().sum()
 }
 
-pub fn main() -> Result<()> {
-    let file = File::open("inputs/day_06.txt")?;
-    let mut reader = BufReader::new(file);
+pub fn main() {
+    let buf = read_to_string("inputs/day_06.txt").unwrap();
 
-    println!("Part 1: {}", part1(&mut reader)?);
-
-    reader.seek(SeekFrom::Start(0))?;
-
-    println!("Part 2: {}", part2(&mut reader)?);
-
-    Ok(())
+    println!("Part 1: {}", part1(&buf));
+    println!("Part 2: {}", part2(&buf));
 }
