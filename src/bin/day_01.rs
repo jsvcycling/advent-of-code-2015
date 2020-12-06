@@ -1,13 +1,7 @@
-use std::io::prelude::*;
+use std::fs::read_to_string;
 
-use std::fs::File;
-use std::io::{BufReader, Result};
-
-pub fn main() -> Result<()> {
-    let mut f = BufReader::new(File::open("inputs/day_01.txt")?);
-
-    let mut buf = String::new();
-    f.read_to_string(&mut buf)?;
+pub fn main() {
+    let buf = read_to_string("inputs/day_01.txt").unwrap();
 
     let mut first_basement = -1;
 
@@ -31,6 +25,4 @@ pub fn main() -> Result<()> {
 
     println!("Part 1: {}", result);
     println!("Part 2: {}", first_basement);
-
-    Ok(())
 }
