@@ -16,7 +16,7 @@ fn part1(buf: &String) -> usize {
                 vowel_count += 1;
             }
 
-            for idx in 0..(chars.len()-1) {
+            for idx in 0..(chars.len() - 1) {
                 let c1 = chars[idx];
                 let c2 = chars[idx + 1];
 
