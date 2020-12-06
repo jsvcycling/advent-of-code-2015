@@ -1,104 +1,71 @@
-use std::io::prelude::*;
-
 use std::collections::HashMap;
-use std::fs::File;
-use std::io::{BufReader, Result};
+use std::fs::read_to_string;
 
-fn part1(routes: &HashMap<String, HashMap<String, usize>>) -> (usize, Vec<String>) {
-    let mut order: Vec<String> = Vec::new();
-    let mut minimum: usize = usize::MAX;
+fn part1(routes: &HashMap<String, HashMap<String, usize>>) -> Option<usize> {
+    routes
+        .keys()
+        .scan(usize::MAX, |state, node| {
+            let mut visited: Vec<_> = vec![node.to_string()];
+            let mut total: usize = 0;
 
-    for start in routes.keys() {
-        let mut visited: Vec<String> = vec![start.to_string()];
-        let mut total: usize = 0;
-        let mut current: String = start.clone();
+            // Keep looping until we've visited every node.
+            while visited.len() != routes.len() {
+                if let Some(targets) = routes.get(visited.last().unwrap()) {
+                    // Select closest target node that hasn't been visited yet.
+                    let next = targets
+                        .iter()
+                        .filter(|t| !visited.contains(t.0))
+                        .min_by_key(|t| t.1)
+                        .unwrap();
 
-        // Keep looping until we've visited every node.
-        loop {
-            if visited.len() == routes.keys().len() {
-                break;
-            }
-
-            if let Some(targets) = routes.get(&current) {
-                let mut next: (String, usize) = (String::new(), usize::MAX);
-
-                // Loop through the list of edge for this specific node to find
-                // the shortest.
-                for t in targets {
-                    if !visited.contains(t.0) && *t.1 < next.1 {
-                        next = (t.0.clone(), *t.1);
-                    }
+                    visited.push(next.0.clone());
+                    total += next.1;
                 }
-
-                visited.push(next.0.clone());
-                total += next.1;
-                current = next.0.clone();
             }
-        }
 
-        // If this iteration is shorter than the current shortest, save it.
-        if total < minimum {
-            order = visited.clone();
-            minimum = total;
-        }
-    }
-
-    (minimum, order)
+            *state = usize::min(total, *state);
+            Some(*state)
+        })
+        .last()
 }
 
-fn part2(routes: &HashMap<String, HashMap<String, usize>>) -> (usize, Vec<String>) {
-    let mut order: Vec<String> = Vec::new();
-    let mut maximum: usize = usize::MIN;
+fn part2(routes: &HashMap<String, HashMap<String, usize>>) -> Option<usize> {
+    routes
+        .keys()
+        .scan(usize::MIN, |state, node| {
+            let mut visited: Vec<_> = vec![node.to_string()];
+            let mut total: usize = 0;
 
-    for start in routes.keys() {
-        let mut visited: Vec<String> = vec![start.to_string()];
-        let mut total: usize = 0;
-        let mut current: String = start.clone();
+            // Keep looping until we've visited every node.
+            while visited.len() != routes.len() {
+                if let Some(targets) = routes.get(visited.last().unwrap()) {
+                    // Select furthest target node that hasn't been visited yet.
+                    let next = targets
+                        .iter()
+                        .filter(|t| !visited.contains(t.0))
+                        .max_by_key(|t| t.1)
+                        .unwrap();
 
-        // Keep looping until we've visited every node.
-        loop {
-            if visited.len() == routes.keys().len() {
-                break;
-            }
-
-            if let Some(targets) = routes.get(&current) {
-                let mut next: (String, usize) = (String::new(), usize::MIN);
-
-                // Loop through the list of edge for this specific node to find
-                // the shortest.
-                for t in targets {
-                    if !visited.contains(t.0) && *t.1 > next.1 {
-                        next = (t.0.clone(), *t.1);
-                    }
+                    visited.push(next.0.clone());
+                    total += next.1;
                 }
-
-                visited.push(next.0.clone());
-                total += next.1;
-                current = next.0.clone();
             }
-        }
 
-        // If this iteration is longer than the current longest, save it.
-        if total > maximum {
-            order = visited.clone();
-            maximum = total;
-        }
-    }
-
-    (maximum, order)
+            *state = usize::max(total, *state);
+            Some(*state)
+        })
+        .last()
 }
 
-pub fn main() -> Result<()> {
-    let f = BufReader::new(File::open("inputs/day_09.txt")?);
-
+pub fn main() {
+    let buf = read_to_string("inputs/day_09.txt").unwrap();
     let mut routes: HashMap<String, HashMap<String, usize>> = HashMap::new();
 
-    f.lines().for_each(|l| {
-        let line = l.unwrap();
+    buf.lines().for_each(|line| {
         let parts: Vec<_> = line.split_whitespace().collect();
 
-        let loc1 = String::from(parts[0]);
-        let loc2 = String::from(parts[2]);
+        let loc1 = parts[0].to_string();
+        let loc2 = parts[2].to_string();
         let dist = parts[4].parse::<usize>().unwrap();
 
         // Insert 2 entries because the graph is not directed.
@@ -125,11 +92,6 @@ pub fn main() -> Result<()> {
             });
     });
 
-    let part1 = part1(&routes);
-    let part2 = part2(&routes);
-
-    println!("Part 1: {} ({:?})", part1.0, part1.1);
-    println!("Part 2: {} ({:?})", part2.0, part2.1);
-
-    Ok(())
+    println!("Part 1: {}", part1(&routes).unwrap());
+    println!("Part 2: {}", part2(&routes).unwrap());
 }
