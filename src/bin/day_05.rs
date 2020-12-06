@@ -45,11 +45,10 @@ fn part2(buf: &String) -> usize {
             let chars: Vec<char> = l.chars().collect();
 
             let mut pairs = HashMap::new();
+            pairs.insert(format!("{}{}", chars[0], chars[1]), 1);
 
             let mut passed1 = false;
             let mut passed2 = false;
-
-            pairs.insert(format!("{}{}", chars[0], chars[1]), 1);
 
             // Iterate over every character in the string and test Criteria 2 as
             // well as build a hashmap of pairs. The number of times a pair
