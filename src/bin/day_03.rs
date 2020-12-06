@@ -1,12 +1,7 @@
-use std::io::prelude::*;
-
 use std::collections::HashMap;
-use std::fs::File;
-use std::io::{BufReader, Result, SeekFrom};
+use std::fs::read_to_string;
 
-fn compute(reader: &mut BufReader<File>, with_robot: bool) -> Result<usize> {
-    let mut buffer = reader.fill_buf()?;
-
+fn compute(buf: &String, with_robot: bool) -> usize {
     let mut santa_pos = (0, 0);
     let mut robot_pos = (0, 0);
 
@@ -15,50 +10,38 @@ fn compute(reader: &mut BufReader<File>, with_robot: bool) -> Result<usize> {
 
     let mut is_robot = false;
 
-    while !buffer.is_empty() {
-        for ch in buffer {
-            let movement = match *ch as char {
-                '^' => (0, 1),
-                'v' => (0, -1),
-                '<' => (-1, 0),
-                '>' => (1, 0),
-                _ => (0, 0),
-            };
+    buf.chars().for_each(|c| {
+        let movement = match c {
+            '^' => (0, 1),
+            'v' => (0, -1),
+            '<' => (-1, 0),
+            '>' => (1, 0),
+            _ => (0, 0),
+        };
 
-            // If we have a robot and it's the robot's turn, update it's
-            // position. Otherwise, update Santa's position.
-            if with_robot && is_robot {
-                robot_pos.0 += movement.0;
-                robot_pos.1 += movement.1;
+        // If we have a robot and it's the robot's turn, update it's
+        // position. Otherwise, update Santa's position.
+        if with_robot && is_robot {
+            robot_pos.0 += movement.0;
+            robot_pos.1 += movement.1;
 
-                houses.insert(robot_pos, 1);
-            } else {
-                santa_pos.0 += movement.0;
-                santa_pos.1 += movement.1;
+            houses.insert(robot_pos, 1);
+        } else {
+            santa_pos.0 += movement.0;
+            santa_pos.1 += movement.1;
 
-                houses.insert(santa_pos, 1);
-            }
-
-            is_robot = !is_robot;
+            houses.insert(santa_pos, 1);
         }
 
-        let length = buffer.len();
-        reader.consume(length);
-        buffer = reader.fill_buf()?;
-    }
+        is_robot = !is_robot;
+    });
 
-    Ok(houses.iter().count())
+    houses.iter().count()
 }
 
-pub fn main() -> Result<()> {
-    let file = File::open("inputs/day_03.txt")?;
-    let mut reader = BufReader::new(file);
+pub fn main() {
+    let buf = read_to_string("inputs/day_03.txt").unwrap();
 
-    println!("Part 1: {}", compute(&mut reader, false)?);
-
-    reader.seek(SeekFrom::Start(0))?;
-
-    println!("Part 2: {}", compute(&mut reader, true)?);
-
-    Ok(())
+    println!("Part 1: {}", compute(&buf, false));
+    println!("Part 2: {}", compute(&buf, true));
 }
