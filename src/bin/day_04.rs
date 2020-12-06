@@ -1,33 +1,20 @@
 use md5::{Digest, Md5};
 
-// Just a simple debug flag.
-const DEBUG: bool = false;
+fn compute(prefix: &'static str, goal: &'static str) -> usize {
+    for i in 1.. {
+        let hash = Md5::digest(format!("{}{}", prefix, i).as_bytes());
 
-// The prefix provided by AoC.
-const PREFIX: &str = "iwrupvqb";
-
-fn compute(goal: &'static str) -> usize {
-    let mut i = 1;
-
-    loop {
-        let hash = Md5::digest(format!("{}{}", PREFIX, i).as_bytes());
-
-        let mut result = format!("{:x}", hash);
-        result.truncate(goal.len());
-
-        if DEBUG {
-            println!("{} = {}", i, result);
-        }
-
-        if result == goal {
+        if format!("{:x}", hash).starts_with(goal) {
             return i;
         }
-
-        i += 1;
     }
+
+    return 0;
 }
 
 pub fn main() {
-    println!("Part 1: {}", compute("00000"));
-    println!("Part 2: {}", compute("000000"));
+    let input = "iwrupvqb";
+
+    println!("Part 1: {}", compute(input, "00000"));
+    println!("Part 2: {}", compute(input, "000000"));
 }
