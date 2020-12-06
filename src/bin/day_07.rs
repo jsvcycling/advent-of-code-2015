@@ -1,11 +1,10 @@
-use std::io::prelude::*;
-
 use std::collections::HashMap;
-use std::fs::File;
-use std::io::{BufReader, Result};
+use std::fs::read_to_string;
 
-#[derive(Debug, Clone)]
-enum Operation {
+type Cache = HashMap<String, u16>;
+type Graph = HashMap<String, Op>;
+
+enum Op {
     Set(String),
     And(String, String),
     Or(String, String),
@@ -14,234 +13,84 @@ enum Operation {
     Not(String),
 }
 
-fn execute(
-    cache: &mut HashMap<String, u16>,
-    graph: &HashMap<String, Operation>,
-    target: &String,
-) -> u16 {
-    let op = graph.get(target).unwrap();
+// Check if the target exists in the cache. If not, check if it's a pure value
+// (i.e. 16-bit number). If neither of these are true, execute it.
+fn get_value(cache: &mut Cache, graph: &Graph, target: &String) -> u16 {
+    if cache.contains_key(target) {
+        return *cache.get(target).unwrap();
+    }
 
-    match op {
-        Operation::Set(value) => {
-            if let Ok(v) = value.parse::<u16>() {
-                cache.insert(target.clone(), v);
-                return v;
-            }
+    if let Ok(l) = target.parse::<u16>() {
+        cache.insert(target.clone(), l);
+        return l;
+    }
 
-            let out = execute(cache, graph, value);
-            cache.insert(target.clone(), out);
-            out
-        }
-        Operation::And(left, right) => {
-            let l = {
-                if cache.contains_key(left) {
-                    *cache.get(left).unwrap()
-                } else {
-                    if let Ok(l) = left.parse::<u16>() {
-                        cache.insert(left.clone(), l);
-                        l
-                    } else {
-                        let out = execute(cache, graph, left);
-                        cache.insert(left.clone(), out);
-                        out
-                    }
-                }
-            };
+    let value = execute(cache, graph, target);
+    cache.insert(target.clone(), value);
+    value
+}
 
-            let r = {
-                if cache.contains_key(right) {
-                    *cache.get(right).unwrap()
-                } else {
-                    if let Ok(l) = right.parse::<u16>() {
-                        cache.insert(right.clone(), l);
-                        l
-                    } else {
-                        let out = execute(cache, graph, right);
-                        cache.insert(right.clone(), out);
-                        out
-                    }
-                }
-            };
-
-            l & r
-        }
-        Operation::Or(left, right) => {
-            let l = {
-                if cache.contains_key(left) {
-                    *cache.get(left).unwrap()
-                } else {
-                    if let Ok(l) = left.parse::<u16>() {
-                        cache.insert(left.clone(), l);
-                        l
-                    } else {
-                        let out = execute(cache, graph, left);
-                        cache.insert(left.clone(), out);
-                        out
-                    }
-                }
-            };
-
-            let r = {
-                if cache.contains_key(right) {
-                    *cache.get(right).unwrap()
-                } else {
-                    if let Ok(l) = right.parse::<u16>() {
-                        cache.insert(right.clone(), l);
-                        l
-                    } else {
-                        let out = execute(cache, graph, right);
-                        cache.insert(right.clone(), out);
-                        out
-                    }
-                }
-            };
-
-            l | r
-        }
-        Operation::LShift(left, right) => {
-            let l = {
-                if cache.contains_key(left) {
-                    *cache.get(left).unwrap()
-                } else {
-                    if let Ok(l) = left.parse::<u16>() {
-                        cache.insert(left.clone(), l);
-                        l
-                    } else {
-                        let out = execute(cache, graph, left);
-                        cache.insert(left.clone(), out);
-                        out
-                    }
-                }
-            };
-
-            let r = {
-                if cache.contains_key(right) {
-                    *cache.get(right).unwrap()
-                } else {
-                    if let Ok(l) = right.parse::<u16>() {
-                        cache.insert(right.clone(), l);
-                        l
-                    } else {
-                        let out = execute(cache, graph, right);
-                        cache.insert(right.clone(), out);
-                        out
-                    }
-                }
-            };
-
-            l << r
-        }
-        Operation::RShift(left, right) => {
-            let l = {
-                if cache.contains_key(left) {
-                    *cache.get(left).unwrap()
-                } else {
-                    if let Ok(l) = left.parse::<u16>() {
-                        cache.insert(left.clone(), l);
-                        l
-                    } else {
-                        let out = execute(cache, graph, left);
-                        cache.insert(left.clone(), out);
-                        out
-                    }
-                }
-            };
-
-            let r = {
-                if cache.contains_key(right) {
-                    *cache.get(right).unwrap()
-                } else {
-                    if let Ok(l) = right.parse::<u16>() {
-                        cache.insert(right.clone(), l);
-                        l
-                    } else {
-                        let out = execute(cache, graph, right);
-                        cache.insert(right.clone(), out);
-                        out
-                    }
-                }
-            };
-
-            l >> r
-        }
-        Operation::Not(value) => {
-            if let Ok(v) = value.parse::<u16>() {
-                cache.insert(target.clone(), v);
-                return v;
-            }
-
-            let out = execute(cache, graph, value);
-            cache.insert(target.clone(), !out);
-            !out
-        }
+fn execute(cache: &mut Cache, graph: &Graph, target: &String) -> u16 {
+    match graph.get(target).unwrap() {
+        Op::Set(v) => get_value(cache, graph, v),
+        Op::And(l, r) => get_value(cache, graph, l) & get_value(cache, graph, r),
+        Op::Or(l, r) => get_value(cache, graph, l) | get_value(cache, graph, r),
+        Op::LShift(l, r) => get_value(cache, graph, l) << get_value(cache, graph, r),
+        Op::RShift(l, r) => get_value(cache, graph, l) >> get_value(cache, graph, r),
+        Op::Not(v) => !get_value(cache, graph, v),
     }
 }
 
-pub fn main() -> Result<()> {
-    let f = BufReader::new(File::open("inputs/day_07.txt")?);
-
-    // We create a cache here so that we don't need to recompute previously-
-    // calculated values.
-    let mut cache: HashMap<String, u16> = HashMap::new();
+pub fn main() {
+    let buf = read_to_string("inputs/day_07.txt").unwrap();
 
     // This is effectively a DAG.
-    let mut ops: HashMap<String, Operation> = HashMap::new();
+    let mut ops: Graph = Graph::new();
 
-    for l in f.lines() {
-        let line = l.unwrap();
+    buf.lines().for_each(|line| {
         let parts: Vec<&str> = line.split_whitespace().collect();
 
         if parts[1] == "AND" {
-            let left = String::from(parts[0]);
-            let right = String::from(parts[2]);
-            let output = String::from(parts[4]);
-
-            ops.insert(output, Operation::And(left, right));
+            ops.insert(
+                parts[4].to_string(),
+                Op::And(parts[0].to_string(), parts[2].to_string()),
+            );
         } else if parts[1] == "OR" {
-            let left = String::from(parts[0]);
-            let right = String::from(parts[2]);
-            let output = String::from(parts[4]);
-
-            ops.insert(output, Operation::Or(left, right));
+            ops.insert(
+                parts[4].to_string(),
+                Op::Or(parts[0].to_string(), parts[2].to_string()),
+            );
         } else if parts[1] == "LSHIFT" {
-            let left = String::from(parts[0]);
-            let right = String::from(parts[2]);
-            let output = String::from(parts[4]);
-
-            ops.insert(output, Operation::LShift(left, right));
+            ops.insert(
+                parts[4].to_string(),
+                Op::LShift(parts[0].to_string(), parts[2].to_string()),
+            );
         } else if parts[1] == "RSHIFT" {
-            let left = String::from(parts[0]);
-            let right = String::from(parts[2]);
-            let output = String::from(parts[4]);
-
-            ops.insert(output, Operation::RShift(left, right));
+            ops.insert(
+                parts[4].to_string(),
+                Op::RShift(parts[0].to_string(), parts[2].to_string()),
+            );
         } else if parts[0] == "NOT" {
-            let input = String::from(parts[1]);
-            let output = String::from(parts[3]);
-
-            ops.insert(output, Operation::Not(input));
+            ops.insert(parts[3].to_string(), Op::Not(parts[1].to_string()));
         } else if parts.len() == 3 {
-            let input = String::from(parts[0]);
-            let output = String::from(parts[2]);
-
-            ops.insert(output, Operation::Set(input));
+            ops.insert(parts[2].to_string(), Op::Set(parts[0].to_string()));
         }
-    }
+    });
 
-    println!("{:?}", ops);
-    println!("{:?}", ops.get("a"));
+    // We create a cache here so that we don't need to recompute previously-
+    // calculated values.
+    let mut cache: Cache = Cache::new();
 
     // Start the recursion!
-    let part1 = execute(&mut cache, &ops, &String::from("a"));
+    let part1 = execute(&mut cache, &ops, &"a".to_string());
 
-    ops.entry(String::from("b"))
-        .and_modify(|v| *v = Operation::Set(format!("{}", part1)));
+    ops.entry("b".to_string())
+        .and_modify(|v| *v = Op::Set(part1.to_string()));
+
     cache.clear();
 
-    let part2 = execute(&mut cache, &ops, &String::from("a"));
+    let part2 = execute(&mut cache, &ops, &"a".to_string());
 
     println!("Part 1: {:?}", part1);
     println!("Part 2: {:?}", part2);
-
-    Ok(())
 }
