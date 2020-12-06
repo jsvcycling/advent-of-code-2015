@@ -1,42 +1,30 @@
-use std::io::prelude::*;
+use std::fs::read_to_string;
 
-use std::fs::File;
-use std::io::{BufReader, Result};
-
-pub fn main() -> Result<()> {
-    let f = BufReader::new(File::open("inputs/day_08.txt")?);
-    let lines: Vec<_> = f.lines().map(|l| l.unwrap()).collect();
+pub fn main() {
+    let buf = read_to_string("inputs/day_08.txt").unwrap();
 
     let mut code_total = 0;
 
-    let part1: usize = lines
-        .iter()
-        .map(|line| {
-            code_total += line.len();
+    let part1: usize = buf.lines().fold(0, |acc, line| {
+        code_total += line.len();
 
-            let mut line = line
-                .trim_matches('"')
-                .replace("\\\\", ";")
-                .replace("\\\"", ":");
+        let mut line = line
+            .trim_matches('"')
+            .replace("\\\\", ";")
+            .replace("\\\"", ":");
 
-            while let Some(i) = line.find(r"\x") {
-                let hex = String::from_utf8(line.as_bytes()[i..(i + 4)].to_vec()).unwrap();
-                line = line.replace(&hex, "?");
-            }
-            line.len()
-        })
-        .sum();
+        while let Some(i) = line.find(r"\x") {
+            line = line.replace(line.get(i..(i + 4)).unwrap(), "?");
+        }
 
-    let part2: usize = lines
-        .iter()
-        .map(|line| {
-            let line = line.replace("\\", ";;").replace("\"", "::");
-            line.len() + 2 // Two extra characters for the outer quotes.
-        })
-        .sum();
+        acc + line.len()
+    });
 
-    println!("{:?}", code_total - part1);
-    println!("{:?}", part2 - code_total);
+    let part2: usize = buf.lines().fold(0, |acc, line| {
+        // Two extra characters for the outer quotes.
+        acc + line.replace("\\", ";;").replace("\"", "::").len() + 2
+    });
 
-    Ok(())
+    println!("{}", code_total - part1);
+    println!("{}", part2 - code_total);
 }
